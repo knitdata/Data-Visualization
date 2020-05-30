@@ -1,0 +1,66 @@
+---
+title: "Stat 651 Final Project"
+author: ' Min Tamang'
+date: ' 12.09.2019 '
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+**Make statebins using data from GeoFRED**
+
+
+```{r}
+# load packages
+library(statebins)
+library(readxl)
+library(dplyr)
+```
+
+
+
+**(1)Statebins with 2018 Bachelor's Degree or Higher by State (percent) data.**
+```{r}
+# upload data
+ data1 <- read_excel("data/GeoFRED_Bachelor's_Degree_or_Higher_by_State_Percent.xls", skip = 1)
+data1 %>% sample_n(5)
+```
+
+```{r}
+# statebins
+statebins_continuous(state_data = data1, state_col = "State",
+                     text_color = "white", value_col = "Year_2018",
+                     brewer_pal="Blues", font_size = 3,
+                     legend_title="2018 Bachelor's Degree or Higher by State (percent)")
+```
+
+
+
+**(2) Statebins with 2018 Median Household Income by State Data**
+```{r}
+data2 <- read_excel("data/GeoFRED_Median_Household_Income_by_State_Percent_Change.xls", skip = 1)
+data2 %>% sample_n(5)
+```
+
+```{r}
+statebins_continuous(state_data = data2, state_col = "State",
+                     text_color = "white", value_col = "Year_2018",
+                     brewer_pal="Greens", font_size = 3,
+                     legend_title="
+Median Household Income by State")
+```
+
+
+**(3) Statebins with 2018 Resident Population by State (change, thousands of persons) Data**
+```{r}
+data3 <- read_excel("data/GeoFRED_Resident_Population_by_State_Change_Thousands_of_Persons.xls", skip=1)
+data3 %>% sample_n(5)
+```
+
+```{r}
+statebins_continuous(state_data = data3, state_col = "State",
+                     text_color = "white", value_col = "Year_2018",
+                     brewer_pal="Reds", font_size = 3, 
+                     legend_title="2018 Resident Population by State (change, thousands of persons) ")
+```
+
