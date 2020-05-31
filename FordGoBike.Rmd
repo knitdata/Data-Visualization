@@ -1,0 +1,120 @@
+---
+title: "FordGoBike Dashboard"
+
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: fill
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(rpivotTable)
+library(lubridate)
+```
+
+
+
+```{r}
+data <-read_csv("data/201904-fordgobike-tripdata.csv")
+
+```
+
+
+April 2019 
+=======================================================================
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### User Type
+
+```{r}
+data %>% group_by(user_type)  %>% summarise(count= n()) %>% plot_ly( x= ~user_type, y=~count, type = 'bar') %>% layout (xaxis = list (title = "User Type"), yaxis = list(title='count'))
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Gender Pie-Chart
+
+```{r}
+data %>% group_by(member_gender) %>% summarise(count=n()) %>% plot_ly( labels = ~member_gender, values =~count) %>% layout (xaxis = list (title = "Gender"), yaxis = list(title='count')) %>% add_pie( hole=0.2)
+```
+
+
+
+```{r}
+fgb201801 <- read_csv("data/201801-fordgobike-tripdata.csv")
+fgb201802 <- read_csv("data/201802-fordgobike-tripdata.csv")
+fgb201803 <- read_csv("data/201803-fordgobike-tripdata.csv")
+fgb201804 <- read_csv("data/201804-fordgobike-tripdata.csv")
+fgb201901 <- read_csv("data/201901-fordgobike-tripdata.csv")
+fgb201902 <- read_csv("data/201902-fordgobike-tripdata.csv")
+fgb201903 <- read_csv("data/201903-fordgobike-tripdata.csv")
+fgb201904 <- read_csv("data/201904-fordgobike-tripdata.csv")
+```
+
+
+```{r}
+fgb201801 <- fgb201801 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201802 <- fgb201802 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201803 <- fgb201803 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201804 <- fgb201804 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201901 <- fgb201901 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201902 <- fgb201902 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201903 <- fgb201903 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+fgb201904 <- fgb201904 %>% mutate(start_station_id = as.integer(start_station_id), end_station_id = as.integer(end_station_id))
+
+
+fordgobike2018 <- bind_rows(fgb201801,fgb201802,fgb201803,fgb201804)
+fordgobike2019 <- bind_rows(fgb201901, fgb201902, fgb201903, fgb201904)
+fordgobike <- bind_rows(fordgobike2018, fordgobike2019)
+fordgobike <- fordgobike %>% mutate(age = year(now())-member_birth_year)
+fordgobike <- fordgobike %>% mutate(year=year(start_time), month=month(start_time), day=day(start_time) )
+
+```
+
+
+
+
+2018 vs 2019
+=====================================================================
+
+Column {data-width=650}
+---------------------------------------------------------------------
+
+Overall Age Distribution
+```{r}
+fordgobike %>% filter( age < 70) %>% ggplot(aes(x=age, color = member_gender)) + geom_histogram(position = "identity") + facet_grid(member_gender~.)
+```
+
+Gender User
+```{r}
+fordgobike%>% ggplot(aes(x=member_gender, y=duration_sec)) + geom_bar(stat="Identity") 
+```
+
+------------------------------------------------
+Comparison
+
+```{r}
+fordgobike %>% ggplot(aes(x=year)) + geom_bar()
+fordgobike %>% ggplot(aes(x=month)) + geom_bar() + facet_grid(year ~ .)
+fordgobike %>% ggplot(aes(x=day)) + geom_bar() + facet_grid(year ~ .)
+```
+
+Pivot Table
+```{r}
+data_pt <- fordgobike %>% select(member_gender,age) %>% filter( age < 70)
+rpivotTable(data_pt, aggregatorName = "Count", cols = "age", rows = "member_gender", rendererName = "Heatmap")
+```
+
+Report 
+========================================================================
+The purpose of this dashboard is to visualize overall picture of the FordGoBike data based on gender, age and user-type. First, I created interactive basic charts with the most recent data available(April 2019). Then, 2018 first 4 months data are compared with corresponding 2019 data. 
+
