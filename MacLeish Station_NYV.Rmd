@@ -1,0 +1,90 @@
+---
+title: "Stat 651 Data Viz"
+author: ' Min Tamang'
+date: ' Nov 19, 2019'
+output:
+  html_document:
+    df_print: paged
+---
+
+
+# Interactive map of the MacLeish Field Station property
+```{r}
+library(pacman)
+p_load(macleish, leaflet, ggmap,mdsr)
+names(macleish_layers)
+```
+
+
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(data = macleish_layers[["streams"]],
+              weight = 1, color = "blue") %>%
+  addPolygons(data = macleish_layers[["buildings"]],
+              weight = 5, color = "red") %>%
+  addPolygons(data = macleish_layers[["forests"]], weight = 1, color = "#05ad21") %>%
+  addMarkers(data = filter(macleish_layers[["landmarks"]], grepl("Met", Label)), 
+             popup = ~Label)
+```
+
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addPolylines(data = macleish_layers[["research"]], weight = 2, color="blue") %>%
+  addPolylines(data = macleish_layers[["trails"]], weight = 2, color = "red") %>%
+  addPolylines(data = macleish_layers[["wetlands"]], weight = 1, color = "#0af531") 
+```
+
+
+
+# Informative interactive map using leaflet that illustrates the nature and extent of restaurant violations in New York City
+
+
+```{r}
+#Geocoding Unique Addresses
+morris_park <- geocode("Morris Park Bake Shop, Bronx, NY 10462")
+morris_park
+wendys <- geocode("Wendy's, Brooklyn, NY 11225")
+wendys
+reynoldspub <- geocode("DJ Reynold's Pub and Restaurant, Manhattanm NY 10019")
+reynoldspub
+brunos <- geocode("Brunos on the boulevard, Queens, NY 11369")
+nyc <- geocode("NYC")
+nyc
+
+```
+
+
+```{r}
+#upload data with geocode
+mydata <- read.csv("Violations_loc.csv", header = TRUE, sep = ",")
+```
+
+
+```{r}
+#remove na
+mynewdata <- na.omit(mydata)
+```
+
+
+```{r}
+#Filter out NYC
+mynewdata <- mydata %>% select(lon,lat) %>% filter( lon> -73.85 & lat< 40.8)
+```
+
+ 
+```{r}
+#Sample 500
+sample <- mynewdata[sample(nrow(mynewdata), 500), ]
+sample_500 <- sample %>% select(lon,lat)
+```
+
+```{r}
+#plot
+map <- map <-leaflet() %>%
+  addTiles() %>%
+  addMarkers(lng = ~lon, lat = ~lat, data = sample_500)
+map
+```
+
