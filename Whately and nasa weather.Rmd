@@ -1,0 +1,108 @@
+---
+title: "Stat 651 Data Viz"
+author: ' Min Tamang'
+date: ' October 22,2019'
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  word_document: default
+section: '02'
+---
+
+# Visualizing Whately,MA Weather Data
+
+```{r}
+library(pacman)
+p_load(macleish,tidyverse,nasaweather,maps, lubridate, dygraphs, xts)
+```
+
+
+```{r}
+# plot of avg temp over each 10-minute interval, temp as a function of time
+whately_2015 %>% ggplot(aes(x=when, y=temperature)) + geom_line(color="#B4D91D") + geom_smooth(color="red")+xlab("Time") + ylab("Temperature(deg F)") + labs(caption = "Fig:2015 Whately Weather Data") + theme(plot.caption = element_text(hjust = 0.5, size = 10))
+```
+
+
+```{r}
+# annotations to include context about the four seasons: the date of the vernal and autumnal equinoxes, and the summer and winter solstices
+season_2015 <- tibble(
+  when= as.POSIXct(c("2015-03-20 00:00:00", "2015-06-20 00:00:00",  "2015-09-23 00:00:00", "2015-12-22 00:00:00")),
+  season=c("spring", "summer", "fall","winter"))
+  season_2015
+
+  plot_whately<- whately_2015 %>% ggplot(aes(y=temperature, x=when, color=temperature)) + geom_line() + geom_vline(data=season_2015, aes(xintercept=when)) 
+  plot_whately
+```
+
+```{r}
+#alternatively
+newdata <- whately_2015 %>% 
+  mutate(date = format(as.POSIXct(when,format="%Y-%m-%d %H:%M:%S"),"%m/%d/%Y"), date= as.factor(date))
+
+d <- as.Date(cut(as.Date(newdata$date, "%m/%d/%Y"), "month")) + 32
+newdata$Season_20_15 <- factor(quarters(d), levels = c("Q1", "Q2", "Q3", "Q4"), labels = c( "spring", "summer", "fall", "winter"))
+newdata %>% ggplot(aes(y= temperature, x= when, color= Season_20_15))+ geom_point()
+```
+
+```{r}
+#context on major storms listed on the Wikipedia pages: 2014–2015 North American Winter and 2015-2016 North American Winter
+plot_whately+ ggtitle(" Major storms of 2014-2015 North American Winter and 2015-2016 North American Winter") +
+  annotate("text", x = as.POSIXct("2015-01-31 00:00:00 "), y = 15, label = "2014-2015 Chicago")+
+  annotate("text", x = as.POSIXct("2016-01-22 00:00:00"), y = -5, label = "2015-2016 Mid-Atlantic States")
+```
+
+
+
+
+```{r}
+#  time series plot using dygraphs
+dg <-newdata %>% select(when, Season_20_15, temperature)%>%
+  tidyr::spread(key = Season_20_15, value = temperature) 
+dg$when = ymd_hms(dg$when)
+dgplot <- xts(dg[, -1], order.by = dg$when)
+dygraph(dgplot)
+```
+
+
+
+
+
+
+
+# Visualizing paths of storms from nasaweather package
+**Tropical cyclone tracks through the Atlantic Ocean, Caribbean Sea and Gulf of Mexico from 1995 to 2005**
+ 
+```{r}
+# scatterplot between wind and pressure with color being type
+storms %>% ggplot(aes(x=pressure, y=wind, color=type)) + geom_point() + geom_smooth()
+```
+
+
+```{r}
+# path of each tropicas storms with color
+storms %>% ggplot( aes(x=lat, y=long))+
+  geom_path(aes(color=name))+
+  facet_wrap(~year) 
+```
+
+
+
+```{r}
+# showing path in world map
+bbox <- storms %>%
+  select(lat, long) %>%
+  apply(MARGIN = 2, range) %>%
+  as.data.frame()
+
+base_map <- map_data("world") %>% ggplot( aes(x = long, y = lat)) +
+  geom_path(aes(group = group), color = "black", size = 0.1) +
+  lims(x = bbox$long, y = bbox$lat)
+
+storms <- storms %>% 
+  mutate(the_date = lubridate::ymd(paste(year, month, day)))
+
+base_map + geom_path(data = storms, aes(color = name, alpha = 0.001, size = wind),arrow = arrow(length = unit(0.01, "inches"))) +
+  facet_wrap(~year) +
+  theme(legend.position = "none")
+```
